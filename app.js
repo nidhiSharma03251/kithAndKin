@@ -7,6 +7,7 @@ const ejsMate = require("ejs-mate");
 const path = require("path");
 app.set("views", path.join(__dirname, "/views"));
 app.set("view engine", "ejs");
+app.use(express.static("public"));
 app.use(express.static(path.join(__dirname, "/public")));
 app.use(express.urlencoded({extended:true}));
 app.use(express.json());
@@ -21,6 +22,17 @@ main().then(() =>{console.log("connected");})
 async function main() {
   await mongoose.connect('mongodb://127.0.0.1:27017/airbnb');
 }
+
+// const updateimg = async() =>{
+//   await Listing.findOneAndUpdate(
+//   { title: "Mountain View Cabin in Banff" },
+//   { $set: { "image.url": "https://images.unsplash.com/photo-1521401830884-6c03c1c87ebb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGxvZGdlfGVufDB8fDB8fHww&auto=format&fit=crop&w=800&q=60" } }
+// )
+// }
+
+// updateimg();
+
+
 
 app.get("/", (req,res)=>{
   res.send("HII, it's working!")
