@@ -97,7 +97,20 @@ body {
     background-color:white;
 }
 
-.add-btn{
+.post-btn{
     background-color:#cd5554;
     border:none;
+}
+
+.show-img{
+    height:40vh;
+}
+
+.btns{
+    display:flex;
+}
+
+.show-card{
+    padding-left:0;
+    padding-right:0;
 }
