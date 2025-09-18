@@ -3,6 +3,8 @@ const app = express();
 const Listing = require("./models/listing.js");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
+const wrapAsync = require("./utils/wrapAsync.js");
+const ExpressError = require("./utils/ExpressError.js");
 
 const path = require("path");
 app.set("views", path.join(__dirname, "/views"));
@@ -40,10 +42,10 @@ app.get("/", (req, res) => {
 });
 
 //shows all the list (home route)
-app.get("/listings", async (req, res) => {
+app.get("/listings", wrapAsync(async (req, res) => {
   let allListings = await Listing.find({});
   res.render("./listings/index.ejs", { allListings });
-});
+}));
 
 //creating a form to create new list
 app.get("/listings/new", (req, res) => {
@@ -51,29 +53,37 @@ app.get("/listings/new", (req, res) => {
 });
 
 //create new list
-app.post("/listings", async (req, res) => {
-  let listing = req.body.listing;
-  let newListing = new Listing(req.body.listing);
+app.post("/listings", wrapAsync(async (req, res, next) => {
+    let listing = req.body.listing;
+    if(!listing){
+      throw new ExpressError(501, "Fill in valid details")
+    }
+
+  let newListing = new Listing(listing);
   await newListing.save();
   res.redirect("/listings");
-});
+}));
 
 //shows a particular list by searching with findbyid.
-app.get("/listings/:id", async (req, res) => {
+app.get("/listings/:id", wrapAsync(async (req, res) => {
   let { id } = req.params;
   const listing = await Listing.findById(id);
+  if(!listing){
+      throw new ExpressError(501, "Fill in valid details")
+    }
+
   res.render("./listings/show.ejs", { listing });
-});
+}));
 
 //renders an update form
-app.get("/listings/:id/edit", async (req, res) => {
+app.get("/listings/:id/edit", wrapAsync(async (req, res) => {
   let { id } = req.params;
   const listing = await Listing.findById(id);
   res.render("./listings/edit.ejs", { listing });
-});
+}));
 
 //update route
-app.put("/listings/:id", async (req, res) => {
+app.put("/listings/:id", wrapAsync(async (req, res) => {
   let { id } = req.params;
   const listing = await Listing.findById(id);
 
@@ -84,15 +94,19 @@ app.put("/listings/:id", async (req, res) => {
   listing.set(req.body.listing);
   await listing.save();
   res.redirect(`/listings/${id}`);
-});
+}));
 
 
 //deleting a list
-app.delete("/listings/:id", async (req, res) => {
+app.delete("/listings/:id", wrapAsync(async (req, res) => {
   let { id } = req.params;
   let deletedList = await Listing.findByIdAndDelete(id);
   res.redirect("/listings");
   console.log(deletedList);
+}));
+
+app.all(/.*/ , (req,res,next) =>{
+  next(new ExpressError(404, "Page not found!"));
 });
 
 // app.get("/testListing", async(req,res)=>{
@@ -108,6 +122,12 @@ app.delete("/listings/:id", async (req, res) => {
 //   console.log("data got saved");
 //   res.send("saved!");
 // })
+
+app.use((err,req,res,next) =>{
+  let { status = 500, message = "Something went wrong!" } = err;
+  res.status(status).render("error.ejs", {message});
+  // res.status(status).send(message);
+})
 
 app.listen(1111, () => {
   console.log("Server is listening at port 1111");
